@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MailBot — EOS Community</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f7f7f5;--bg3:#efefed;
+  --border:#e8e8e6;--border2:#d4d4d0;
+  --tx:#1a1a18;--tx2:#6b6b68;--tx3:#9b9b98;
+  --acc:#2383e2;--acc-bg:#eef4fd;
+  --green:#0f7b57;--green-bg:#eaf5ef;
+  --red:#c4452a;--red-bg:#fdf0ed;
+  --yellow:#c26b0a;--yellow-bg:#fef6e8;
+  --purple:#7248c9;--purple-bg:#f2eeff;
+  --sans:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:6px;--r2:10px;
+}
+body{font-family:var(--sans);background:var(--bg2);color:var(--tx);height:100vh;display:flex;overflow:hidden;font-size:14px}
+
+/* ── SIDEBAR ── */
+aside{width:232px;min-width:232px;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh}
+.logo{padding:14px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px}
+.logo-icon{width:26px;height:26px;background:var(--tx);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.logo-name{font-size:13.5px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:var(--tx3);margin-left:auto;font-family:var(--mono)}
+
+nav{flex:1;overflow-y:auto;padding:6px}
+.nl{font-size:10.5px;font-weight:600;color:var(--tx3);letter-spacing:.5px;text-transform:uppercase;padding:10px 8px 3px}
+.ni{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:var(--r);cursor:pointer;color:var(--tx2);font-size:13px;font-weight:500;transition:background .1s,color .1s;margin-bottom:1px}
+.ni:hover{background:var(--bg2);color:var(--tx)}
+.ni.on{background:var(--bg2);color:var(--tx);font-weight:600}
+.ni .ic{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.ni .nb{margin-left:auto;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;font-family:var(--mono)}
+.nb-y{background:var(--yellow-bg);color:var(--yellow)}
+.nb-b{background:var(--acc-bg);color:var(--acc)}
+
+.sb-nums{padding:8px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.sn{background:var(--bg2);border-radius:var(--r);padding:7px 9px}
+.sn-l{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:1px}
+.sn-v{font-size:17px;font-weight:700;font-family:var(--mono);line-height:1}
+.sb-status{padding:8px 10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--tx3);font-family:var(--mono)}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
+.sdot.ok{background:var(--green)}
+
+/* ── MAIN ── */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:46px;padding:0 22px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-left{display:flex;align-items:center;gap:6px}
+.tb-title{font-size:13.5px;font-weight:600}
+.tb-date{font-size:11.5px;color:var(--tx3);font-family:var(--mono)}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.tab{display:none}
+.tab.on{display:block;animation:fi .15s ease}
+@keyframes fi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMPONENTS ── */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px;color:var(--tx)}
+.card-title small{font-size:11px;color:var(--tx3);font-weight:400;font-family:var(--mono)}
+
+label{display:block;font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:4px;letter-spacing:.2px}
+input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);color:var(--tx);padding:7px 10px;font-family:var(--sans);font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(35,131,226,.12)}
+textarea{font-family:var(--mono);font-size:12px;resize:vertical;line-height:1.7}
+.field{margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);border:none;cursor:pointer;font-family:var(--sans);font-weight:600;font-size:12.5px;transition:all .12s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-lg{padding:9px 22px;font-size:13.5px;border-radius:var(--r2)}
+.btn-p{background:var(--acc);color:#fff}
+.btn-p:hover{background:#1a6cc7}
+.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:var(--bg2);color:var(--tx);border:1px solid var(--border2)}
+.btn-g:hover{background:var(--bg3)}
+.btn-d{background:var(--red-bg);color:var(--red);border:1px solid #f0c4bc}
+.btn-d:hover{background:#fce5e0}
+.btn-gr{background:var(--green-bg);color:var(--green);border:1px solid #b8e0d2}
+.btn-gr:hover{background:#d8f0e7}
+.btn-y{background:var(--yellow-bg);color:var(--yellow);border:1px solid #f0d9b8}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-act{background:var(--green-bg);color:var(--green);border:1px solid #b8e0d2}.b-act::before{background:var(--green)}
+.b-ina{background:var(--yellow-bg);color:var(--yellow);border:1px solid #f0d9b8}.b-ina::before{background:var(--yellow)}
+.b-sus{background:var(--green-bg);color:var(--green);border:1px solid #b8e0d2}.b-sus::before{background:var(--green)}
+.b-hab{background:var(--purple-bg);color:var(--purple);border:1px solid #d4c4f0}.b-hab::before{background:var(--purple)}
+.b-des{background:var(--bg3);color:var(--tx3);border:1px solid var(--border2)}.b-des::before{background:var(--tx3)}
+
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 12px;font-size:11px;font-weight:600;color:var(--tx3);letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--tx2);vertical-align:middle}
+td.b{color:var(--tx);font-weight:500}
+td.m{font-family:var(--mono);font-size:11.5px}
+tr:hover td{background:var(--bg2)}
+tr:last-child td{border-bottom:none}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.sc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:16px}
+.sc-l{font-size:11px;font-weight:600;color:var(--tx3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.sc-v{font-size:32px;font-weight:700;line-height:1;font-family:var(--mono)}
+.sc-s{font-size:11px;color:var(--tx3);margin-top:4px}
+
+.dz{border:1.5px dashed var(--border2);border-radius:var(--r2);padding:28px 20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg)}
+.dz:hover,.dz.ov{border-color:var(--acc);background:var(--acc-bg)}
+.dz-ic{font-size:28px;margin-bottom:8px}
+.dz p{font-size:13px;color:var(--tx2);line-height:1.6}
+.dz strong{color:var(--tx)}
+
+.fbar{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center}
+.fbar input,.fbar select{font-size:12px;padding:6px 10px;max-width:200px}
+.fchip{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg);color:var(--tx2);font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;font-family:var(--sans)}
+.fchip:hover{border-color:var(--tx3);color:var(--tx)}
+.fchip.on{background:var(--tx);border-color:var(--tx);color:#fff}
+.fchip.on-g{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.fchip.on-y{background:var(--yellow-bg);border-color:var(--yellow);color:var(--yellow)}
+.cpill{margin-left:auto;font-size:11.5px;color:var(--tx3);font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:3px 10px}
+
+.tbox{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:8px;margin-bottom:12px}
+.topt{display:flex;align-items:flex-start;gap:9px;padding:9px 10px;border-radius:var(--r);cursor:pointer;border:1.5px solid transparent;transition:all .12s;margin-bottom:4px}
+.topt:last-child{margin-bottom:0}
+.topt:hover{background:var(--bg)}
+.topt.sel{background:var(--bg);border-color:var(--acc)}
+.topt input[type=radio]{margin-top:2px;accent-color:var(--acc);width:auto;flex-shrink:0}
+.topt-l{font-size:13px;font-weight:600;color:var(--tx)}
+.topt-d{font-size:11px;color:var(--tx3);margin-top:1px;font-family:var(--mono)}
+.topt-n{margin-left:auto;font-size:13px;font-weight:700;color:var(--acc);font-family:var(--mono);flex-shrink:0;padding-top:1px}
+
+.dtbar{display:flex;border-bottom:1px solid var(--border)}
+.dtab{padding:8px 14px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;transition:all .12s}
+.dtab.on{color:var(--tx);border-bottom-color:var(--acc);font-weight:600}
+.dpanel{display:none;padding-top:12px}
+.dpanel.on{display:block}
+
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.tpl-c{border:1.5px solid var(--border);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all .12s}
+.tpl-c:hover{border-color:var(--acc);box-shadow:0 2px 8px rgba(35,131,226,.12)}
+.tpl-c.sel{border-color:var(--acc);box-shadow:0 0 0 2px rgba(35,131,226,.15)}
+.tpl-th{height:56px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--bg2)}
+.tpl-nm{padding:5px 8px;font-size:11.5px;font-weight:600;background:var(--bg);border-top:1px solid var(--border);text-align:center;color:var(--tx2)}
+
+.vtags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.vt{background:var(--purple-bg);border:1px solid #d4c4f0;color:var(--purple);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:background .1s;user-select:none}
+.vt:hover{background:#e8deff}
+
+.pi{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;font-family:var(--mono);border-bottom:1px solid var(--border)}
+.pi-ic{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.spin{width:11px;height:11px;border:1.5px solid var(--border2);border-top-color:var(--acc);border-radius:50%;animation:sp .5s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+.prev-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+.prev-head{background:var(--bg);padding:10px 14px;border-bottom:1px solid var(--border)}
+.prev-to{font-size:11px;color:var(--tx3);font-family:var(--mono)}
+.prev-subj{font-size:13px;font-weight:600;margin-top:2px}
+#prev-iframe{width:100%;min-height:300px;border:none;background:#fff;display:block;border-radius:0 0 var(--r2) var(--r2)}
+#prev-pre{padding:14px;font-family:var(--mono);font-size:11.5px;color:var(--tx2);white-space:pre-wrap;line-height:1.8;min-height:160px;display:none}
+
+.callout{background:var(--acc-bg);border:1px solid #c5d9f5;border-radius:var(--r2);padding:13px 16px;margin-bottom:14px;font-size:13px;line-height:1.75}
+.callout strong{color:var(--acc)}
+.callout a{color:var(--acc)}
+.callout code{font-family:var(--mono);font-size:11.5px;background:#dceafa;padding:1px 5px;border-radius:3px;color:#1a5a9e}
+.callout-y{background:var(--yellow-bg);border-color:#f0d9b8}
+.callout-y strong,.callout-y a{color:var(--yellow)}
+.callout-y code{background:#fde9c4;color:#8a4a00}
+.callout-g{background:var(--green-bg);border-color:#b8e0d2}
+.callout-g strong{color:var(--green)}
+
+pre.cb{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px;font-family:var(--mono);font-size:11.5px;color:var(--tx);overflow-x:auto;line-height:1.75}
+
+.dist-bar{background:var(--bg2);border-radius:var(--r);overflow:hidden;height:8px;display:flex;margin-bottom:8px}
+.dist-bar div{height:100%;transition:width .5s ease}
+
+#toast{position:fixed;bottom:20px;right:20px;padding:11px 16px;border-radius:var(--r2);font-weight:600;font-size:13px;z-index:9999;display:none;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.12);border:1px solid}
+#toast.s{background:var(--green-bg);border-color:#b8e0d2;color:var(--green)}
+#toast.e{background:var(--red-bg);border-color:#f0c4bc;color:var(--red)}
+#toast.i{background:var(--acc-bg);border-color:#c5d9f5;color:var(--acc)}
+
+input[type=checkbox]{width:auto;cursor:pointer;accent-color:var(--acc)}
+input[type=color]{height:36px;cursor:pointer;padding:3px 4px}
+.row2{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;align-items:start}
+.sticky{position:sticky;top:0}
+.divider{height:1px;background:var(--border);margin:6px 0 16px}
+
+.add-form{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:12px}
+
+@media(max-width:900px){
+  aside{width:54px;min-width:54px}
+  aside .logo-name,.logo-sub,.nl,.ni span,.sb-nums,.sb-status{display:none}
+  .ni{padding:11px;justify-content:center;border-radius:var(--r2)}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .row2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">
+    <div class="logo-icon">✉</div>
+    <span class="logo-name">MailBot</span>
+    <span class="logo-sub">EOS</span>
+  </div>
+  <nav>
+    <div class="nl">Principal</div>
+    <div class="ni on" onclick="go('dashboard',this)"><span class="ic">⊞</span><span>Dashboard</span></div>
+    <div class="ni" onclick="go('contactos',this)"><span class="ic">◎</span><span>Contactos</span><span class="nb nb-b" id="nb-tot" style="display:none">0</span></div>
+    <div class="ni" onclick="go('inactivos',this)"><span class="ic">◷</span><span>Inactivos</span><span class="nb nb-y" id="nb-ina" style="display:none">0</span></div>
+    <div class="nl">Envíos</div>
+    <div class="ni" onclick="go('campana',this)"><span class="ic">⇡</span><span>Campaña</span></div>
+    <div class="ni" onclick="go('historial',this)"><span class="ic">≡</span><span>Historial</span></div>
+    <div class="nl">Sistema</div>
+    <div class="ni" onclick="go('config',this)"><span class="ic">◈</span><span>Configuración</span></div>
+    <div class="ni" onclick="go('ayuda',this)"><span class="ic">?</span><span>Ayuda</span></div>
+  </nav>
+  <div class="sb-nums">
+    <div class="sn"><div class="sn-l">Activos</div><div class="sn-v" style="color:var(--green)" id="sb-a">0</div></div>
+    <div class="sn"><div class="sn-l">Inactivos</div><div class="sn-v" style="color:var(--yellow)" id="sb-i">0</div></div>
+    <div class="sn"><div class="sn-l">Total</div><div class="sn-v" id="sb-t">0</div></div>
+    <div class="sn"><div class="sn-l">Enviados</div><div class="sn-v" style="color:var(--acc)" id="sb-e">0</div></div>
+  </div>
+  <div class="sb-status"><div class="sdot" id="sdot"></div><span id="stxt">Sin configurar</span></div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-title" id="pg-title">Dashboard</span>
+    </div>
+    <span class="tb-date" id="tb-date"></span>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="tab on" id="tab-dashboard">
+      <div class="stats-row">
+        <div class="sc"><div class="sc-l">Activos EOS</div><div class="sc-v" style="color:var(--green)" id="ds-a">0</div><div class="sc-s">usuarios activos</div></div>
+        <div class="sc"><div class="sc-l">Inactivos</div><div class="sc-v" style="color:var(--yellow)" id="ds-i">0</div><div class="sc-s">a reactivar</div></div>
+        <div class="sc"><div class="sc-l">Enviados</div><div class="sc-v" style="color:var(--acc)" id="ds-e">0</div><div class="sc-s">total histórico</div></div>
+        <div class="sc"><div class="sc-l">Campañas</div><div class="sc-v" id="ds-c">0</div><div class="sc-s" id="ds-cs">enviadas</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Distribución de usuarios <small id="ds-pct"></small></div>
+        <div class="dist-bar" style="margin-bottom:8px"><div id="bar-a" style="background:var(--green)"></div><div id="bar-i" style="background:var(--yellow)"></div></div>
+        <div style="display:flex;gap:16px;font-size:12px;font-family:var(--mono)">
+          <span style="color:var(--green)">■ Activos <strong id="ds-an">0</strong></span>
+          <span style="color:var(--yellow)">■ Inactivos <strong id="ds-in">0</strong></span>
+          <span style="color:var(--tx3)">■ Total <strong id="ds-tn">0</strong></span>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">Campañas recientes</div><div id="dash-camps"><p style="color:var(--tx3);font-size:13px">Sin campañas aún. Importa contactos y envía tu primera campaña.</p></div></div>
+    </div>
+
+    <!-- CONTACTOS -->
+    <div class="tab" id="tab-contactos">
+      <div class="card">
+        <div class="card-title">Importar desde Excel — EOS Community</div>
+        <div class="dz" id="dz" onclick="document.getElementById('xlsxF').click()" ondragover="dOv(event)" ondragleave="dLv()" ondrop="dDp(event)">
+          <div class="dz-ic">📊</div>
+          <p><strong>Arrastra el Excel aquí</strong> o haz clic para seleccionar</p>
+          <p style="font-size:11.5px;margin-top:4px;color:var(--tx3)">Detecta automáticamente: Correo · Nombre · Apellido · Estatus · País · Ciudad · Patrocinador</p>
+        </div>
+        <input type="file" id="xlsxF" accept=".xlsx,.xls,.csv" style="display:none" onchange="loadX(event)">
+        <div id="imp-area" style="display:none">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px">
+            <span id="imp-sum" style="font-size:12px;color:var(--acc);font-family:var(--mono)"></span>
+            <button class="btn btn-gr btn-sm" onclick="confirmImp()">Confirmar importación</button>
+            <button class="btn btn-g btn-sm" onclick="cancelImp()">Cancelar</button>
+          </div>
+          <div id="imp-table" style="margin-top:10px;overflow-x:auto"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:7px">
+          <div class="card-title" style="margin-bottom:0">Contactos <small id="ct-title">0 total</small></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-g btn-sm" onclick="expCSV()">Exportar CSV</button>
+            <button class="btn btn-d btn-sm" onclick="clearAll()">Limpiar todo</button>
+            <button class="btn btn-p btn-sm" onclick="togAF()">+ Agregar</button>
+          </div>
+        </div>
+        <div class="fbar">
+          <input id="s-q" placeholder="Buscar por nombre o email…" oninput="renderC()" style="flex:1;min-width:160px;max-width:260px">
+          <button class="fchip on" id="ch-t" onclick="setChip('t')">Todos</button>
+          <button class="fchip" id="ch-a" onclick="setChip('a')">Activos</button>
+          <button class="fchip" id="ch-i" onclick="setChip('i')">Inactivos</button>
+          <select id="s-pais" onchange="renderC()" style="max-width:140px"><option value="">País</option></select>
+          <select id="s-mail" onchange="renderC()" style="max-width:150px"><option value="">Estado correo</option><option value="suscrito">Suscritos</option><option value="habilitado">Habilitados</option><option value="desuscrito">Desuscritos</option></select>
+          <span class="cpill" id="cc">0</span>
+        </div>
+        <div id="add-form" style="display:none" class="add-form">
+          <div class="g3">
+            <div class="field"><label>Nombre completo</label><input id="f-n" placeholder="Ana García"></div>
+            <div class="field"><label>Email</label><input id="f-e" type="email" placeholder="ana@correo.com"></div>
+            <div class="field"><label>Patrocinador</label><input id="f-p" placeholder="EOS Community"></div>
+          </div>
+          <div style="display:flex;gap:7px">
+            <button class="btn btn-p btn-sm" onclick="addC()">Guardar</button>
+            <button class="btn btn-g btn-sm" onclick="togAF()">Cancelar</button>
+          </div>
+        </div>
+        <div class="tw">
+          <table>
+            <thead><tr>
+              <th style="width:26px"><input type="checkbox" id="chk-all" onchange="togAll(this)"></th>
+              <th>Nombre</th><th>Email</th><th>País</th><th>Estatus EOS</th><th>Correo</th><th>Acción</th>
+            </tr></thead>
+            <tbody id="ctb"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-g btn-sm" onclick="bulk('suscrito')">Suscribir sel.</button>
+          <button class="btn btn-g btn-sm" onclick="bulk('habilitado')">Habilitar sel.</button>
+          <button class="btn btn-g btn-sm" onclick="bulk('desuscrito')">Desuscribir sel.</button>
+          <button class="btn btn-d btn-sm" onclick="bulkDel()">Eliminar sel.</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INACTIVOS -->
+    <div class="tab" id="tab-inactivos">
+      <div class="callout callout-y">
+        <strong>Usuarios Inactivos en EOS Community</strong> — Habilita su correo para incluirlos en campañas de reactivación. Cuando respondan y vuelvan, márcalos como Suscrito.
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:7px">
+          <div class="card-title" style="margin-bottom:0">Inactivos <small id="it-title">0</small></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-g btn-sm" onclick="deshabTodos()">Deshabilitar todos</button>
+            <button class="btn btn-y btn-sm" onclick="habTodos()">Habilitar todos</button>
+            <button class="btn btn-p btn-sm" onclick="goInact()">Campaña a inactivos →</button>
+          </div>
+        </div>
+        <div class="fbar">
+          <input id="si-q" placeholder="Buscar inactivo…" oninput="renderI()" style="flex:1;min-width:160px;max-width:260px">
+          <select id="si-pais" onchange="renderI()" style="max-width:140px"><option value="">País</option></select>
+          <span class="cpill" id="ic">0</span>
+        </div>
+        <div class="tw">
+          <table>
+            <thead><tr>
+              <th style="width:26px"><input type="checkbox" id="chk-ia" onchange="togIA(this)"></th>
+              <th>Nombre</th><th>Email</th><th>País</th><th>Ciudad</th><th>Habilitado</th><th>Acción</th>
+            </tr></thead>
+            <tbody id="itb"></tbody>
+          </table>
+        </div>
+        <p style="margin-top:10px;font-size:11.5px;color:var(--tx3);font-family:var(--mono)">Los inactivos habilitados reciben la próxima campaña. Al enviarles, su estado cambia a "suscrito" automáticamente.</p>
+      </div>
+    </div>
+
+    <!-- CAMPAÑA -->
+    <div class="tab" id="tab-campana">
+      <div class="row2">
+        <div>
+          <div class="card">
+            <div class="card-title">Nueva campaña</div>
+            <div class="field">
+              <label>Destinatarios</label>
+              <div class="tbox">
+                <div class="topt sel" id="to-sus" onclick="selTgt('sus')"><input type="radio" name="tgt" value="sus" checked><div><div class="topt-l">Solo suscritos</div><div class="topt-d">mailEstado = suscrito</div></div><div class="topt-n" id="tn-sus">0</div></div>
+                <div class="topt" id="to-act" onclick="selTgt('act')"><input type="radio" name="tgt" value="act"><div><div class="topt-l">Activos EOS</div><div class="topt-d">eosActivo = true</div></div><div class="topt-n" id="tn-act">0</div></div>
+                <div class="topt" id="to-ina" onclick="selTgt('ina')"><input type="radio" name="tgt" value="ina"><div><div class="topt-l">Inactivos habilitados</div><div class="topt-d">eosActivo = false, habilitado</div></div><div class="topt-n" id="tn-ina">0</div></div>
+                <div class="topt" id="to-tod" onclick="selTgt('tod')"><input type="radio" name="tgt" value="tod"><div><div class="topt-l">Todos</div><div class="topt-d">activos + inactivos hab.</div></div><div class="topt-n" id="tn-tod">0</div></div>
+              </div>
+            </div>
+            <div class="g2">
+              <div class="field" style="margin:0"><label>Nombre de la campaña</label><input id="c-nombre" placeholder="Reactivación Marzo 2026"></div>
+              <div class="field" style="margin:0"><label>Asunto del email</label><input id="c-asunto" value="Hola {{nombre}}, tenemos algo para ti" oninput="updPrev()"></div>
+            </div>
+            <div class="vtags" style="margin-bottom:12px">
+              <span class="vt" onclick="insVar('c-asunto','nombre')">{{nombre}}</span>
+              <span class="vt" onclick="insVar('c-asunto','ciudad')">{{ciudad}}</span>
+            </div>
+            <div class="field">
+              <label>Contenido del email</label>
+              <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden">
+                <div class="dtbar">
+                  <div class="dtab on" onclick="swD('visual',this)">Visual</div>
+                  <div class="dtab" onclick="swD('html',this)">HTML</div>
+                  <div class="dtab" onclick="swD('texto',this)">Texto</div>
+                </div>
+                <div class="dpanel on" id="dp-visual" style="padding:12px">
+                  <div class="tpl-grid" id="tpl-grid"></div>
+                  <div id="ve-f" style="display:none">
+                    <div class="g2" style="margin-bottom:9px">
+                      <div class="field" style="margin:0"><label>Color principal</label><input type="color" id="ve-col" value="#2383e2" oninput="rebTpl()"></div>
+                      <div class="field" style="margin:0"><label>Nombre / Logo</label><input id="ve-logo" placeholder="EOS Community" oninput="rebTpl()"></div>
+                    </div>
+                    <div class="field"><label>Título del email</label><input id="ve-title" placeholder="Hola {{nombre}}, tenemos algo para ti" oninput="rebTpl()"></div>
+                    <div class="field"><label>Cuerpo del mensaje</label><textarea id="ve-body" rows="4" oninput="rebTpl()" placeholder="Escribe aquí el mensaje principal…&#10;Puedes usar {{nombre}}, {{ciudad}}, {{empresa}}"></textarea></div>
+                    <div class="g2">
+                      <div class="field" style="margin:0"><label>Texto del botón</label><input id="ve-btn" placeholder="Ver más →" oninput="rebTpl()"></div>
+                      <div class="field" style="margin:0"><label>URL del botón</label><input id="ve-url" placeholder="https://eoscommunity.online" oninput="rebTpl()"></div>
+                    </div>
+                    <div class="vtags" style="margin-top:8px">
+                      <span class="vt" onclick="vIns('{{nombre}}')">{{nombre}}</span>
+                      <span class="vt" onclick="vIns('{{empresa}}')">{{empresa}}</span>
+                      <span class="vt" onclick="vIns('{{ciudad}}')">{{ciudad}}</span>
+                      <span class="vt" onclick="vIns('{{email}}')">{{email}}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="dpanel" id="dp-html" style="padding:12px">
+                  <p style="font-size:12px;color:var(--tx3);margin-bottom:6px">Pega HTML con estilos inline. Las variables {{nombre}} etc. se reemplazan automáticamente.</p>
+                  <textarea id="c-html" rows="11" oninput="updPrev()" placeholder="<h1>Hola {{nombre}}</h1>..."></textarea>
+                  <div class="vtags" style="margin-top:7px">
+                    <span class="vt" onclick="insVar('c-html','nombre')">{{nombre}}</span>
+                    <span class="vt" onclick="insVar('c-html','empresa')">{{empresa}}</span>
+                    <span class="vt" onclick="insVar('c-html','ciudad')">{{ciudad}}</span>
+                    <span class="vt" onclick="insVar('c-html','email')">{{email}}</span>
+                  </div>
+                </div>
+                <div class="dpanel" id="dp-texto" style="padding:12px">
+                  <textarea id="c-body" rows="9" oninput="updPrev()">Hola {{nombre}},
+
+Tenemos novedades importantes para ti en EOS Community.
+
+Lleva tiempo que no sabemos de ti y queremos que vuelvas.
+
+Entra aquí: https://eoscommunity.online
+
+Saludos,
+El equipo de EOS Community</textarea>
+                  <div class="vtags" style="margin-top:7px">
+                    <span class="vt" onclick="insVar('c-body','nombre')">{{nombre}}</span>
+                    <span class="vt" onclick="insVar('c-body','ciudad')">{{ciudad}}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="send-st" style="display:none;margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-g" onclick="togPrev()">Vista previa</button>
+              <button class="btn btn-p btn-lg" id="btn-send" onclick="sendC()">Enviar campaña</button>
+              <span id="send-n" style="font-size:12px;color:var(--tx3);font-family:var(--mono)"></span>
+            </div>
+          </div>
+        </div>
+        <div id="prev-panel" style="display:none">
+          <div class="card sticky">
+            <div class="card-title">Vista previa</div>
+            <div class="field"><label>Ver para</label><select id="prev-sel" onchange="updPrev()"></select></div>
+            <div class="prev-box">
+              <div class="prev-head">
+                <div class="prev-to" id="prev-to">Para: —</div>
+                <div class="prev-subj" id="prev-subj">—</div>
+              </div>
+              <iframe id="prev-iframe" sandbox="allow-same-origin"></iframe>
+              <pre id="prev-pre">—</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="tab" id="tab-historial">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:0">Historial de campañas</div>
+          <button class="btn btn-d btn-sm" onclick="clearCamps()">Limpiar historial</button>
+        </div>
+        <div id="hist"></div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="tab" id="tab-config">
+      <div class="callout">
+        <strong>Cómo configurar en 3 pasos</strong><br>
+        1. Crea cuenta gratis en <a href="https://resend.com" target="_blank">resend.com</a> → <strong>API Keys → Create API Key</strong> → copia la key<br>
+        2. Despliega este proyecto en <a href="https://vercel.com" target="_blank">vercel.com</a> → agrega la variable <code>RESEND_API_KEY</code> con tu key<br>
+        3. Pega la URL de Vercel abajo y haz la prueba
+      </div>
+      <div class="card">
+        <div class="card-title">Configuración del servidor</div>
+        <div class="g2">
+          <div class="field"><label>URL de tu proyecto en Vercel</label><input id="cfg-url" placeholder="https://mailbot-eos.vercel.app" oninput="saveConf()"></div>
+          <div class="field"><label>Nombre del remitente</label><input id="cfg-from" placeholder="EOS Community" oninput="saveConf()"></div>
+        </div>
+        <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-p" onclick="testConn()">Enviar email de prueba</button>
+          <input id="cfg-test" placeholder="tu@email.com" style="max-width:230px">
+          <span id="test-r" style="font-size:12px;font-family:var(--mono)"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Variables de entorno en Vercel</div>
+        <p style="font-size:13px;color:var(--tx2);margin-bottom:12px">Ve a tu proyecto en Vercel → Settings → Environment Variables y agrega estas dos:</p>
+        <pre class="cb">RESEND_API_KEY     =  re_xxxxxxxxxxxxxxxxxxxx
+FROM_EMAIL         =  EOS Community &lt;onboarding@resend.dev&gt;</pre>
+        <div class="callout callout-y" style="margin-top:12px;margin-bottom:0">
+          <strong>Nota sobre el email remitente:</strong> Con <code>onboarding@resend.dev</code> el email llega desde ese dominio de Resend. Para que salga desde tu propio dominio necesitas verificar un dominio en Resend. Con Gmail sin dominio propio, siempre habrá riesgo de ir a Promociones — es una limitación de Gmail, no del bot.
+        </div>
+      </div>
+    </div>
+
+    <!-- AYUDA -->
+    <div class="tab" id="tab-ayuda">
+      <div class="card">
+        <div class="card-title">Cómo subir a GitHub y Vercel</div>
+        <div style="font-size:13px;line-height:1.9;color:var(--tx2)">
+          <p style="margin-bottom:12px"><strong style="color:var(--tx)">1. Crear repo en GitHub</strong><br>Ve a github.com → New repository → nombre: <code style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:3px">mailbot-eos</code> → Public → Create. Luego sube todos los archivos de la carpeta.</p>
+          <div class="divider"></div>
+          <p style="margin-bottom:12px"><strong style="color:var(--tx)">2. Conectar Vercel</strong><br>Ve a vercel.com → Sign up con GitHub → New Project → importa <code style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:3px">mailbot-eos</code> → Deploy.</p>
+          <div class="divider"></div>
+          <p style="margin-bottom:12px"><strong style="color:var(--tx)">3. Agregar API Key</strong><br>En Vercel → tu proyecto → Settings → Environment Variables → agrega <code style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:3px">RESEND_API_KEY</code> y <code style="font-family:var(--mono);font-size:12px;background:var(--bg2);padding:1px 5px;border-radius:3px">FROM_EMAIL</code> → Redeploy.</p>
+          <div class="divider"></div>
+          <p><strong style="color:var(--tx)">4. Configurar el bot</strong><br>Abre tu URL de Vercel → ve a Configuración → pega la URL → prueba.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Links</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <a href="https://resend.com" target="_blank" style="display:block;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-decoration:none;transition:border-color .12s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:18px;margin-bottom:6px">📧</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px">Resend</div>
+            <div style="font-size:11.5px;color:var(--tx3)">3,000 emails/mes gratis</div>
+          </a>
+          <a href="https://vercel.com" target="_blank" style="display:block;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-decoration:none;transition:border-color .12s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:18px;margin-bottom:6px">▲</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px">Vercel</div>
+            <div style="font-size:11.5px;color:var(--tx3)">Servidor gratis</div>
+          </a>
+          <a href="https://eoscommunity.online" target="_blank" style="display:block;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px;text-decoration:none;transition:border-color .12s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:18px;margin-bottom:6px">⚡</div>
+            <div style="font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px">EOS Community</div>
+            <div style="font-size:11.5px;color:var(--tx3)">eoscommunity.online</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+let cts   = JSON.parse(localStorage.getItem('mb4_cts')   || '[]');
+let camps = JSON.parse(localStorage.getItem('mb4_camps') || '[]');
+let conf  = JSON.parse(localStorage.getItem('mb4_conf')  || '{}');
+let pend  = [];
+let mode  = 'visual';
+let tpl   = 0;
+let tgt   = 'sus';
+let chip  = 't';
+
+// ── TEMPLATES ──
+const TPLS = [
+  {n:'Profesional',ic:'◼',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:40px 16px;background:#f4f4f4;font-family:'Segoe UI',Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto"><tr><td style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:${c};padding:28px 36px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><span style="color:#fff;font-size:18px;font-weight:700">${lg||'EOS Community'}</span></td><td align="right"><span style="color:rgba(255,255,255,.7);font-size:12px">eoscommunity.online</span></td></tr></table></td></tr><tr><td style="padding:36px"><h2 style="color:#1a1a18;font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.35">${t||'Hola {{nombre}}'}</h2><div style="color:#4a4a48;font-size:15px;line-height:1.8;white-space:pre-wrap">${b||''}</div>${btn?`<table cellpadding="0" cellspacing="0" style="margin-top:28px"><tr><td style="background:${c};border-radius:8px"><a href="${url||'#'}" style="display:inline-block;padding:13px 32px;color:#fff;text-decoration:none;font-size:14px;font-weight:600">${btn}</a></td></tr></table>`:''}</td></tr><tr><td style="background:#f9f9f7;padding:18px 36px;border-top:1px solid #ebebeb"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><span style="color:#aaa;font-size:11px">© ${new Date().getFullYear()} ${lg||'EOS Community'}</span></td><td align="right"><span style="color:#aaa;font-size:11px">Responde UNSUB para darte de baja</span></td></tr></table></td></tr></table></td></tr></table></div>`},
+  {n:'Reactivación',ic:'◈',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:40px 16px;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto"><tr><td style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:4px 0 0;background:linear-gradient(90deg,${c},${c}99,${c})"></td></tr><tr><td style="padding:32px 36px 24px"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><span style="font-size:18px;font-weight:800;color:#1a1a18">${lg||'EOS Community'}</span></td><td align="right"><span style="background:#f0f0ee;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:#6b6b68">Mensaje personal</span></td></tr></table></td></tr><tr><td style="padding:0 36px 32px"><h2 style="color:#1a1a18;font-size:24px;font-weight:800;margin:0 0 16px;line-height:1.3">${t||'{{nombre}}, hace tiempo que no te vemos 👋'}</h2><div style="color:#4a4a48;font-size:15px;line-height:1.85;white-space:pre-wrap">${b||''}</div>${btn?`<table cellpadding="0" cellspacing="0" style="margin-top:28px"><tr><td style="background:${c};border-radius:8px"><a href="${url||'#'}" style="display:inline-block;padding:13px 32px;color:#fff;text-decoration:none;font-size:14px;font-weight:700">${btn}</a></td></tr></table>`:''}</td></tr><tr><td style="background:#f9f9f7;padding:16px 36px;border-top:1px solid #ebebeb"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><span style="color:#bbb;font-size:11px">${lg||'EOS Community'} · eoscommunity.online</span></td><td align="right"><span style="color:#bbb;font-size:11px">Responde UNSUB para salir</span></td></tr></table></td></tr></table></td></tr></table></div>`},
+  {n:'Minimalista',ic:'○',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:52px 16px;background:#ffffff;font-family:'Georgia',serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto"><tr><td><table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:2px solid #1a1a18;padding-bottom:16px;margin-bottom:32px"><tr><td><span style="font-size:14px;font-weight:700;font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;color:#1a1a18">${lg||'EOS Community'}</span></td><td align="right"><span style="font-size:11px;color:#9b9b98;font-family:monospace">${new Date().toLocaleDateString('es-CO')}</span></td></tr></table></td></tr><tr><td><h2 style="font-size:26px;color:#1a1a18;margin:0 0 22px;font-weight:400;line-height:1.35;letter-spacing:-.3px">${t||'Hola {{nombre}}'}</h2><div style="color:#4a4a48;font-size:15px;line-height:1.9;white-space:pre-wrap">${b||''}</div>${btn?`<div style="margin-top:32px"><a href="${url||'#'}" style="color:${c};font-size:14px;font-weight:700;text-decoration:none;font-family:sans-serif;border-bottom:2px solid ${c};padding-bottom:2px">${btn} →</a></div>`:''}<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #ebebeb;margin-top:40px;padding-top:18px"><tr><td><span style="color:#bbb;font-size:11px;font-family:monospace">${lg||'EOS Community'} · UNSUB para salir</span></td></tr></table></td></tr></table></div>`},
+  {n:'Newsletter',ic:'▦',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:40px 16px;background:#f8f8f6;font-family:'Segoe UI',Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto"><tr><td style="background:#fff;border-radius:12px;overflow:hidden"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:24px 32px;background:#1a1a18"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><span style="color:#fff;font-size:17px;font-weight:700">${lg||'EOS Community'}</span></td><td align="right"><span style="color:#6b6b68;font-size:11px;font-family:monospace">${new Date().toLocaleDateString('es-CO')}</span></td></tr></table></td></tr><tr><td style="height:4px;background:${c}"></td></tr><tr><td style="padding:32px"><h2 style="color:#1a1a18;font-size:22px;font-weight:700;margin:0 0 18px">${t||'Hola {{nombre}}'}</h2><div style="color:#4a4a48;font-size:14px;line-height:1.85;white-space:pre-wrap">${b||''}</div>${btn?`<table cellpadding="0" cellspacing="0" style="margin-top:24px"><tr><td style="background:${c};border-radius:6px"><a href="${url||'#'}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-size:13px;font-weight:600">${btn}</a></td></tr></table>`:''}</td></tr><tr><td style="padding:16px 32px;border-top:1px solid #ebebeb;background:#f9f9f7"><span style="color:#bbb;font-size:11px">${lg||'EOS Community'} · Responde UNSUB para salir</span></td></tr></table></td></tr></table></div>`},
+  {n:'Bold',ic:'●',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:40px 16px;background:#1a1a18;font-family:'Segoe UI',Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto"><tr><td style="background:#222220;border-radius:12px;overflow:hidden;border:1px solid #2e2e2c"><table width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:28px 32px;border-bottom:1px solid #2e2e2c"><table width="100%" cellpadding="0" cellspacing="0"><tr><td><div style="width:32px;height:32px;background:${c};border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;vertical-align:middle;margin-right:10px">⚡</div><span style="color:#fff;font-size:16px;font-weight:700;vertical-align:middle">${lg||'EOS Community'}</span></td></tr></table></td></tr><tr><td style="padding:32px"><h2 style="color:#ffffff;font-size:24px;font-weight:800;margin:0 0 16px;line-height:1.3">${t||'Hola {{nombre}}'}</h2><div style="color:#9b9b98;font-size:14px;line-height:1.85;white-space:pre-wrap">${b||''}</div>${btn?`<table cellpadding="0" cellspacing="0" style="margin-top:28px"><tr><td style="background:${c};border-radius:8px"><a href="${url||'#'}" style="display:inline-block;padding:13px 28px;color:#fff;text-decoration:none;font-size:14px;font-weight:700">${btn}</a></td></tr></table>`:''}</td></tr><tr><td style="padding:16px 32px;border-top:1px solid #2e2e2c"><span style="color:#4a4a48;font-size:11px">${lg||'EOS Community'} · eoscommunity.online · Responde UNSUB</span></td></tr></table></td></tr></table></div>`},
+  {n:'Simple',ic:'▷',f:(c,t,b,btn,url,lg)=>`<div style="margin:0;padding:40px 16px;background:#fff;font-family:'Segoe UI',Arial,sans-serif"><table width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto"><tr><td><p style="color:#9b9b98;font-size:11px;font-family:monospace;margin:0 0 24px;text-transform:uppercase;letter-spacing:2px">${lg||'EOS Community'}</p><h2 style="color:#1a1a18;font-size:22px;font-weight:700;margin:0 0 16px;line-height:1.3">${t||'Hola {{nombre}}'}</h2><div style="color:#4a4a48;font-size:14px;line-height:1.85;white-space:pre-wrap">${b||''}</div>${btn?`<table cellpadding="0" cellspacing="0" style="margin-top:24px"><tr><td style="background:${c};border-radius:6px"><a href="${url||'#'}" style="display:inline-block;padding:11px 24px;color:#fff;text-decoration:none;font-size:13px;font-weight:600">${btn}</a></td></tr></table>`:''}<hr style="border:none;border-top:1px solid #ebebeb;margin:32px 0 16px"><p style="color:#bbb;font-size:11px;font-family:monospace;margin:0">${lg||'EOS Community'} · Responde UNSUB para salir</p></td></tr></table></div>`},
+];
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('tb-date').textContent = new Date().toLocaleDateString('es-CO',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  loadConf(); buildTpls(); renderAll();
+});
+function renderAll(){renderC();renderI();renderDash();renderHist();updPais();updTgtNums();updSendN();updSbStats();updNavBadges();updPrevSel();}
+
+// ── TEMPLATES ──
+function buildTpls(){
+  document.getElementById('tpl-grid').innerHTML = TPLS.map((t,i)=>`<div class="tpl-c ${i===tpl?'sel':''}" onclick="pickTpl(${i})"><div class="tpl-th">${t.ic}</div><div class="tpl-nm">${t.n}</div></div>`).join('');
+}
+function pickTpl(i){tpl=i;buildTpls();document.getElementById('ve-f').style.display='block';rebTpl();}
+function rebTpl(){
+  const g=id=>document.getElementById(id)?.value||'';
+  document.getElementById('c-html').value = TPLS[tpl].f(g('ve-col')||'#2383e2',g('ve-title'),g('ve-body'),g('ve-btn'),g('ve-url'),g('ve-logo'));
+  updPrev();
+}
+function vIns(v){const el=document.getElementById('ve-body');const s=el.selectionStart;el.value=el.value.slice(0,s)+v+el.value.slice(el.selectionEnd);el.selectionStart=el.selectionEnd=s+v.length;el.focus();rebTpl();}
+function swD(m,el){mode=m;document.querySelectorAll('.dtab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.dpanel').forEach(p=>p.classList.remove('on'));el.classList.add('on');document.getElementById('dp-'+m).classList.add('on');updPrev();}
+
+// ── IMPORT ──
+function dOv(e){e.preventDefault();document.getElementById('dz').classList.add('ov');}
+function dLv(){document.getElementById('dz').classList.remove('ov');}
+function dDp(e){e.preventDefault();dLv();const f=e.dataTransfer.files[0];if(f)procFile(f);}
+function loadX(e){const f=e.target.files[0];if(f)procFile(f);e.target.value='';}
+function procFile(file){
+  const isCSV=file.name.endsWith('.csv');
+  const r=new FileReader();
+  r.onload=(ev)=>{
+    try{
+      const wb=isCSV?XLSX.read(ev.target.result,{type:'string'}):XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      if(!rows.length){toast('El archivo está vacío','e');return;}
+      parseRows(rows);
+    }catch(err){toast('Error leyendo archivo: '+err.message,'e');}
+  };
+  isCSV?r.readAsText(file):r.readAsArrayBuffer(file);
+}
+function norm(s){return String(s||'').toLowerCase().replace(/\s+/g,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+function mapRow(row){
+  const get=(...ns)=>{for(const n of ns)for(const k of Object.keys(row))if(norm(k)===norm(n))return String(row[k]||'').trim();return'';};
+  const email=get('correo','email','e-mail','mail','correoelectronico');
+  if(!email||!email.includes('@')||!email.includes('.'))return null;
+  const nombre=get('nombre','firstname','name')||'';
+  const apellido=get('apellido','lastname','apellidos')||'';
+  const eRaw=get('estatus','status','estado','activo')||'Inactivo';
+  const eosActivo=eRaw.toLowerCase().includes('activ');
+  return{
+    id:Date.now()+Math.random(),
+    nombre:[nombre,apellido].filter(Boolean).join(' ')||email.split('@')[0],
+    email,
+    empresa:get('patrocinador','sponsor','empresa','company')||'',
+    ciudad:get('ciudad','city')||'',
+    pais:get('pais','country','país','nacionalidad')||'',
+    eosActivo,
+    mailEstado:eosActivo?'suscrito':'habilitado',
+    fechaImport:new Date().toLocaleDateString('es-CO')
+  };
+}
+function parseRows(rows){
+  pend=[];let skip=0;
+  for(const row of rows){const m=mapRow(row);if(!m){skip++;continue;}if(cts.find(c=>c.email===m.email)||pend.find(c=>c.email===m.email)){skip++;continue;}pend.push(m);}
+  const act=pend.filter(c=>c.eosActivo).length;
+  const ina=pend.filter(c=>!c.eosActivo).length;
+  document.getElementById('imp-sum').textContent=`${pend.length} nuevos · ${skip} omitidos | ${act} Activos · ${ina} Inactivos`;
+  const prev=[...pend.filter(c=>c.eosActivo).slice(0,4),...pend.filter(c=>!c.eosActivo).slice(0,4)];
+  document.getElementById('imp-table').innerHTML=`<table><thead><tr><th>Nombre</th><th>Email</th><th>País</th><th>EOS</th><th>Correo</th></tr></thead><tbody>${prev.map(c=>`<tr><td class="b">${x(c.nombre)}</td><td class="m">${x(c.email)}</td><td>${x(c.pais)}</td><td><span class="badge ${c.eosActivo?'b-act':'b-ina'}">${c.eosActivo?'Activo':'Inactivo'}</span></td><td><span class="badge ${c.eosActivo?'b-sus':'b-hab'}">${c.mailEstado}</span></td></tr>`).join('')}${pend.length>8?`<tr><td colspan="5" style="color:var(--tx3);text-align:center;padding:8px">… y ${pend.length-8} más</td></tr>`:''}</tbody></table>`;
+  document.getElementById('imp-area').style.display='block';
+}
+function confirmImp(){if(!pend.length)return;cts.push(...pend);saveCts();renderAll();toast(`${pend.length} contactos importados`);pend=[];document.getElementById('imp-area').style.display='none';}
+function cancelImp(){pend=[];document.getElementById('imp-area').style.display='none';}
+
+// ── CONTACTS ──
+function saveCts(){localStorage.setItem('mb4_cts',JSON.stringify(cts));}
+function renderC(){
+  const q=(document.getElementById('s-q')?.value||'').toLowerCase();
+  const fp=document.getElementById('s-pais')?.value||'';
+  const fm=document.getElementById('s-mail')?.value||'';
+  const fl=cts.filter(c=>{
+    if(q&&!c.nombre.toLowerCase().includes(q)&&!c.email.toLowerCase().includes(q))return false;
+    if(fp&&c.pais!==fp)return false;
+    if(fm&&c.mailEstado!==fm)return false;
+    if(chip==='a'&&!c.eosActivo)return false;
+    if(chip==='i'&&c.eosActivo)return false;
+    return true;
+  });
+  document.getElementById('cc').textContent=`${fl.length} / ${cts.length}`;
+  document.getElementById('ct-title').textContent=`${cts.length} total`;
+  const tb=document.getElementById('ctb');
+  if(!fl.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--tx3);text-align:center;padding:24px;font-size:13px">Sin contactos. Importa un Excel para comenzar.</td></tr>';return;}
+  tb.innerHTML=fl.map(c=>`<tr>
+    <td><input type="checkbox" class="rck" data-id="${c.id}"></td>
+    <td class="b">${x(c.nombre)}</td>
+    <td class="m">${x(c.email)}</td>
+    <td style="font-size:12px">${x(c.pais||'—')}</td>
+    <td><span class="badge ${c.eosActivo?'b-act':'b-ina'}">${c.eosActivo?'Activo':'Inactivo'}</span></td>
+    <td><span class="badge ${mBadge(c.mailEstado)}">${c.mailEstado}</span></td>
+    <td><div style="display:flex;gap:5px">
+      <button class="btn btn-g btn-sm" onclick="cycSt(${c.id})">${nLbl(c.mailEstado)}</button>
+      <button class="btn btn-d btn-sm" onclick="remCt(${c.id})">×</button>
+    </div></td>
+  </tr>`).join('');
+}
+function mBadge(s){return s==='suscrito'?'b-sus':s==='habilitado'?'b-hab':'b-des';}
+function nLbl(s){return s==='suscrito'?'Deshabilitar':s==='habilitado'?'Suscribir':'Habilitar';}
+function cycSt(id){
+  cts=cts.map(c=>{if(c.id!==id)return c;const n=c.mailEstado==='suscrito'?'desuscrito':c.mailEstado==='habilitado'?'suscrito':'habilitado';return{...c,mailEstado:n};});
+  saveCts();renderC();renderI();updTgtNums();updSendN();updSbStats();
+}
+function renderI(){
+  const q=(document.getElementById('si-q')?.value||'').toLowerCase();
+  const fp=document.getElementById('si-pais')?.value||'';
+  const list=cts.filter(c=>{
+    if(c.eosActivo)return false;
+    if(q&&!c.nombre.toLowerCase().includes(q)&&!c.email.toLowerCase().includes(q))return false;
+    if(fp&&c.pais!==fp)return false;
+    return true;
+  });
+  document.getElementById('ic').textContent=list.length;
+  document.getElementById('it-title').textContent=list.length+' usuarios';
+  const tb=document.getElementById('itb');
+  if(!list.length){tb.innerHTML='<tr><td colspan="7" style="color:var(--tx3);text-align:center;padding:24px;font-size:13px">No hay inactivos.</td></tr>';return;}
+  tb.innerHTML=list.map(c=>`<tr>
+    <td><input type="checkbox" class="ick" data-id="${c.id}"></td>
+    <td class="b">${x(c.nombre)}</td>
+    <td class="m">${x(c.email)}</td>
+    <td style="font-size:12px">${x(c.pais||'—')}</td>
+    <td style="font-size:12px">${x(c.ciudad||'—')}</td>
+    <td><label style="display:flex;align-items:center;gap:7px;cursor:pointer">
+      <input type="checkbox" ${c.mailEstado!=='desuscrito'?'checked':''} onchange="togHab(${c.id},this.checked)">
+      <span class="badge ${c.mailEstado==='desuscrito'?'b-des':'b-hab'}">${c.mailEstado==='desuscrito'?'No enviar':'Habilitado'}</span>
+    </label></td>
+    <td><button class="btn btn-gr btn-sm" onclick="markSus(${c.id})">Suscribir</button></td>
+  </tr>`).join('');
+}
+function togHab(id,v){cts=cts.map(c=>c.id===id?{...c,mailEstado:v?'habilitado':'desuscrito'}:c);saveCts();renderI();updTgtNums();updSendN();}
+function markSus(id){cts=cts.map(c=>c.id===id?{...c,mailEstado:'suscrito',eosActivo:true}:c);saveCts();renderAll();toast('Usuario reactivado y suscrito');}
+function habTodos(){let n=0;cts=cts.map(c=>{if(!c.eosActivo&&c.mailEstado==='desuscrito'){n++;return{...c,mailEstado:'habilitado'};}return c;});saveCts();renderAll();toast(`${n} inactivos habilitados`);}
+function deshabTodos(){let n=0;cts=cts.map(c=>{if(!c.eosActivo&&c.mailEstado!=='desuscrito'){n++;return{...c,mailEstado:'desuscrito'};}return c;});saveCts();renderAll();toast(`${n} deshabilitados`,'i');}
+function goInact(){selTgt('ina');go('campana',document.querySelectorAll('.ni')[4]);}
+function setChip(c){chip=c;document.querySelectorAll('.fchip').forEach(el=>el.classList.remove('on','on-g','on-y'));const m={t:'on',a:'on-g',i:'on-y'};document.getElementById('ch-'+c)?.classList.add(m[c]);renderC();}
+function togAF(){const f=document.getElementById('add-form');f.style.display=f.style.display==='none'?'block':'none';}
+function addC(){
+  const n=document.getElementById('f-n').value.trim();
+  const e=document.getElementById('f-e').value.trim();
+  if(!n||!e){toast('Nombre y email son obligatorios','e');return;}
+  cts.push({id:Date.now(),nombre:n,email:e,empresa:document.getElementById('f-p').value.trim(),ciudad:'',pais:'',eosActivo:true,mailEstado:'suscrito',fechaImport:new Date().toLocaleDateString('es-CO')});
+  saveCts();renderAll();togAF();
+  ['f-n','f-e','f-p'].forEach(id=>document.getElementById(id).value='');
+  toast('Contacto agregado');
+}
+function remCt(id){cts=cts.filter(c=>c.id!==id);saveCts();renderAll();}
+function togAll(cb){document.querySelectorAll('.rck').forEach(c=>c.checked=cb.checked);}
+function togIA(cb){document.querySelectorAll('.ick').forEach(c=>c.checked=cb.checked);}
+function getSelIds(){return[...document.querySelectorAll('.rck:checked')].map(c=>Number(c.dataset.id));}
+function bulk(estado){const ids=getSelIds();if(!ids.length){toast('Selecciona contactos primero','e');return;}cts=cts.map(c=>ids.includes(c.id)?{...c,mailEstado:estado}:c);saveCts();renderC();updTgtNums();updSendN();toast(`${ids.length} contactos → ${estado}`);}
+function bulkDel(){const ids=getSelIds();if(!ids.length){toast('Selecciona contactos','e');return;}if(!confirm(`¿Eliminar ${ids.length} contactos?`))return;cts=cts.filter(c=>!ids.includes(c.id));saveCts();renderAll();}
+function clearAll(){if(!confirm('¿Eliminar TODOS los contactos? No se puede deshacer.'))return;cts=[];saveCts();renderAll();toast('Contactos eliminados','i');}
+function expCSV(){
+  if(!cts.length){toast('Sin contactos para exportar','e');return;}
+  const h=['nombre','email','empresa','ciudad','pais','eosActivo','mailEstado'];
+  const csv=[h.join(','),...cts.map(c=>h.map(k=>JSON.stringify(c[k]||'')).join(','))].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='contactos-eos-'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('CSV exportado');
+}
+
+// ── TARGET ──
+function getTgts(){
+  if(tgt==='sus')return cts.filter(c=>c.mailEstado==='suscrito');
+  if(tgt==='act')return cts.filter(c=>c.eosActivo&&c.mailEstado!=='desuscrito');
+  if(tgt==='ina')return cts.filter(c=>!c.eosActivo&&c.mailEstado==='habilitado');
+  if(tgt==='tod')return cts.filter(c=>c.mailEstado!=='desuscrito');
+  return[];
+}
+function selTgt(t){
+  tgt=t;
+  document.querySelectorAll('.topt').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('to-'+t)?.classList.add('sel');
+  const r=document.querySelector(`input[value="${t}"]`);if(r)r.checked=true;
+  updSendN();updPrevSel();
+}
+function updTgtNums(){
+  const sus=cts.filter(c=>c.mailEstado==='suscrito').length;
+  const act=cts.filter(c=>c.eosActivo&&c.mailEstado!=='desuscrito').length;
+  const ina=cts.filter(c=>!c.eosActivo&&c.mailEstado==='habilitado').length;
+  const tod=cts.filter(c=>c.mailEstado!=='desuscrito').length;
+  ['sus','act','ina','tod'].forEach((k,i)=>{const el=document.getElementById('tn-'+k);if(el)el.textContent=[sus,act,ina,tod][i];});
+}
+function updSendN(){const n=getTgts().length;const el=document.getElementById('send-n');if(el)el.textContent=n?`${n} destinatarios`:'0 destinatarios';}
+
+// ── INTERP & BODY ──
+function interp(text,c){return text.replace(/\{\{nombre\}\}/g,c.nombre||'').replace(/\{\{empresa\}\}/g,c.empresa||'').replace(/\{\{email\}\}/g,c.email||'').replace(/\{\{ciudad\}\}/g,c.ciudad||'').replace(/\{\{pais\}\}/g,c.pais||'');}
+function getBody(c){return mode==='texto'?interp(document.getElementById('c-body').value,c):interp(document.getElementById('c-html').value,c);}
+
+// ── PREVIEW ──
+function updPrevSel(){
+  const sel=document.getElementById('prev-sel');if(!sel)return;
+  const pool=getTgts().length?getTgts():cts;
+  sel.innerHTML=pool.map(c=>`<option value="${c.id}">${x(c.nombre)} (${c.eosActivo?'Activo':'Inactivo'})</option>`).join('');
+  updPrev();
+}
+function updPrev(){
+  const sel=document.getElementById('prev-sel');if(!sel)return;
+  const c=cts.find(ct=>ct.id==sel.value)||getTgts()[0]||cts[0];if(!c)return;
+  document.getElementById('prev-to').textContent='Para: '+c.email;
+  document.getElementById('prev-subj').textContent=interp(document.getElementById('c-asunto').value,c);
+  const body=getBody(c);
+  const iframe=document.getElementById('prev-iframe');
+  const pre=document.getElementById('prev-pre');
+  if(mode==='texto'){iframe.style.display='none';pre.style.display='block';pre.textContent=body;}
+  else{iframe.style.display='block';pre.style.display='none';iframe.srcdoc=body;}
+}
+function togPrev(){const p=document.getElementById('prev-panel');p.style.display=p.style.display==='none'?'block':'none';if(p.style.display==='block')updPrev();}
+function insVar(fid,v){const el=document.getElementById(fid);const tag='{{'+v+'}}';const s=el.selectionStart;el.value=el.value.slice(0,s)+tag+el.value.slice(el.selectionEnd);el.selectionStart=el.selectionEnd=s+tag.length;el.focus();updPrev();}
+
+// ── SEND ──
+async function sendC(){
+  if(!conf.serverUrl){toast('Configura la URL del servidor en ⚙️ Configuración','e');return;}
+  const targets=getTgts();
+  if(!targets.length){toast('No hay destinatarios para este filtro','e');return;}
+  const asunto=document.getElementById('c-asunto').value.trim();
+  if(!asunto){toast('El asunto es obligatorio','e');return;}
+  const cNombre=document.getElementById('c-nombre').value||'Campaña '+new Date().toLocaleDateString('es-CO');
+  if(!confirm(`¿Enviar "${cNombre}" a ${targets.length} destinatarios?`))return;
+
+  const sd=document.getElementById('send-st');
+  sd.style.display='block';
+  sd.innerHTML=`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r2);padding:14px;max-height:260px;overflow-y:auto">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+      <span>Enviando campaña…</span>
+      <span id="prog-cnt" style="font-family:var(--mono);color:var(--acc);font-size:12px">0/${targets.length}</span>
+    </div>
+    <div id="prog-list">${targets.map(c=>`<div class="pi" id="pi-${c.id.toString().replace(/\./g,'_')}"><span class="pi-ic"><span class="spin"></span></span><span style="color:var(--tx3)">${x(c.nombre)} &lt;${x(c.email)}&gt;</span></div>`).join('')}</div>
+  </div>`;
+
+  document.getElementById('btn-send').disabled=true;
+  let ok=0,fail=0;
+
+  for(const c of targets){
+    const pid='pi-'+c.id.toString().replace(/\./g,'_');
+    const el=document.getElementById(pid);
+    try{
+      const res=await fetch(`${conf.serverUrl.replace(/\/$/,'')}/api/send`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({to_email:c.email,to_name:c.nombre,subject:interp(asunto,c),html:getBody(c)})
+      });
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error||res.statusText);
+      if(el)el.innerHTML=`<span class="pi-ic">✓</span><span style="color:var(--green)">${x(c.nombre)} &lt;${x(c.email)}&gt;</span>`;
+      if(!c.eosActivo&&c.mailEstado==='habilitado')cts=cts.map(ct=>ct.id===c.id?{...ct,mailEstado:'suscrito'}:ct);
+      ok++;
+    }catch(err){
+      if(el)el.innerHTML=`<span class="pi-ic">✗</span><span style="color:var(--red)">${x(c.nombre)} — ${err.message}</span>`;
+      fail++;
+    }
+    document.getElementById('prog-cnt').textContent=`${ok+fail}/${targets.length}`;
+    await delay(350);
+  }
+
+  saveCts();
+  camps.push({id:Date.now(),nombre:cNombre,asunto,enviados:ok,fallidos:fail,total:targets.length,fecha:new Date().toLocaleDateString('es-CO'),hora:new Date().toLocaleTimeString('es-CO'),objetivo:tgt});
+  localStorage.setItem('mb4_camps',JSON.stringify(camps));
+
+  sd.innerHTML+=`<div style="background:${ok>0?'var(--green-bg)':'var(--red-bg)'};border:1px solid ${ok>0?'#b8e0d2':'#f0c4bc'};border-radius:var(--r);padding:11px 14px;font-weight:600;margin-top:10px;font-size:13px;color:${ok>0?'var(--green)':'var(--red)'}">
+    ${ok>0?`${ok} emails enviados correctamente`:''} ${fail>0?`· ${fail} fallidos`:''}
+  </div>`;
+
+  document.getElementById('btn-send').disabled=false;
+  renderAll();
+  toast(`${ok} enviados · ${fail} errores`);
+}
+
+// ── DASHBOARD ──
+function renderDash(){
+  const act=cts.filter(c=>c.eosActivo).length;
+  const ina=cts.filter(c=>!c.eosActivo).length;
+  const tot=cts.length;
+  const env=camps.reduce((a,c)=>a+(c.enviados||0),0);
+  document.getElementById('ds-a').textContent=act;
+  document.getElementById('ds-i').textContent=ina;
+  document.getElementById('ds-e').textContent=env;
+  document.getElementById('ds-c').textContent=camps.length;
+  document.getElementById('ds-an').textContent=act;
+  document.getElementById('ds-in').textContent=ina;
+  document.getElementById('ds-tn').textContent=tot;
+  const pct=tot?Math.round(act/tot*100):0;
+  document.getElementById('bar-a').style.width=pct+'%';
+  document.getElementById('bar-i').style.width=(100-pct)+'%';
+  document.getElementById('ds-pct').textContent=tot?`${pct}% activos`:'';
+  const div=document.getElementById('dash-camps');
+  if(!camps.length){div.innerHTML='<p style="color:var(--tx3);font-size:13px">Sin campañas aún.</p>';return;}
+  div.innerHTML=`<div class="tw"><table><thead><tr><th>Nombre</th><th>Objetivo</th><th>Enviados</th><th>Fallidos</th><th>Fecha</th><th>Hora</th></tr></thead><tbody>${[...camps].reverse().slice(0,8).map(c=>`<tr><td class="b">${x(c.nombre)}</td><td><span class="badge b-hab">${c.objetivo||'todos'}</span></td><td style="color:var(--green);font-weight:600;font-family:var(--mono)">${c.enviados}</td><td style="color:${c.fallidos>0?'var(--red)':'var(--tx3)'};font-family:var(--mono)">${c.fallidos||0}</td><td class="m">${c.fecha}</td><td class="m" style="color:var(--tx3)">${c.hora||'—'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function renderHist(){
+  const div=document.getElementById('hist');
+  if(!camps.length){div.innerHTML='<p style="color:var(--tx3);font-size:13px">Sin campañas en el historial.</p>';return;}
+  div.innerHTML=`<div class="tw"><table><thead><tr><th>Nombre</th><th>Asunto</th><th>Objetivo</th><th>Total</th><th>Enviados</th><th>Fallidos</th><th>Fecha</th></tr></thead><tbody>${[...camps].reverse().map(c=>`<tr><td class="b">${x(c.nombre)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx2)">${x(c.asunto)}</td><td><span class="badge b-hab">${c.objetivo||'todos'}</span></td><td class="m">${c.total||c.enviados}</td><td style="color:var(--green);font-weight:600;font-family:var(--mono)">${c.enviados}</td><td style="color:${c.fallidos>0?'var(--red)':'var(--tx3)'};font-family:var(--mono)">${c.fallidos||0}</td><td class="m">${c.fecha}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function clearCamps(){if(!confirm('¿Limpiar todo el historial?'))return;camps=[];localStorage.setItem('mb4_camps',JSON.stringify(camps));renderHist();renderDash();toast('Historial limpiado','i');}
+
+// ── STATS ──
+function updSbStats(){
+  document.getElementById('sb-a').textContent=cts.filter(c=>c.eosActivo).length;
+  document.getElementById('sb-i').textContent=cts.filter(c=>!c.eosActivo).length;
+  document.getElementById('sb-t').textContent=cts.length;
+  document.getElementById('sb-e').textContent=camps.reduce((a,c)=>a+(c.enviados||0),0);
+}
+function updNavBadges(){
+  const tot=cts.length,ina=cts.filter(c=>!c.eosActivo).length;
+  const nt=document.getElementById('nb-tot');const ni=document.getElementById('nb-ina');
+  if(nt){nt.textContent=tot;nt.style.display=tot?'':'none';}
+  if(ni){ni.textContent=ina;ni.style.display=ina?'':'none';}
+}
+function updPais(){
+  const paises=[...new Set(cts.map(c=>c.pais).filter(Boolean))].sort();
+  ['s-pais','si-pais'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">País</option>'+paises.map(p=>`<option value="${x(p)}" ${p===cur?'selected':''}>${x(p)}</option>`).join('');
+  });
+}
+
+// ── CONFIG ──
+function loadConf(){
+  if(conf.serverUrl)document.getElementById('cfg-url').value=conf.serverUrl;
+  if(conf.fromName)document.getElementById('cfg-from').value=conf.fromName;
+  updStatusDot();
+}
+function saveConf(){
+  conf={serverUrl:document.getElementById('cfg-url').value.trim(),fromName:document.getElementById('cfg-from').value.trim()};
+  localStorage.setItem('mb4_conf',JSON.stringify(conf));
+  updStatusDot();
+}
+function updStatusDot(){
+  const ok=!!conf.serverUrl;
+  const dot=document.getElementById('sdot');const txt=document.getElementById('stxt');
+  if(dot)dot.className='sdot'+(ok?' ok':'');
+  if(txt)txt.textContent=ok?'Servidor configurado':'Sin configurar';
+}
+async function testConn(){
+  const r=document.getElementById('test-r');
+  if(!conf.serverUrl){r.textContent='Falta la URL del servidor';r.style.color='var(--red)';return;}
+  const testEmail=document.getElementById('cfg-test').value.trim();
+  if(!testEmail){r.textContent='Escribe un email de prueba';r.style.color='var(--red)';return;}
+  r.textContent='Enviando…';r.style.color='var(--tx3)';
+  const testHtml=`<div style="padding:40px 16px;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif"><div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;padding:36px;box-shadow:0 2px 8px rgba(0,0,0,.06)"><h2 style="color:#2383e2;margin:0 0 14px;font-size:20px">✓ MailBot EOS funciona</h2><p style="color:#4a4a48;font-size:15px;line-height:1.75;margin:0 0 14px">Si ves este email con diseño y colores, el servidor Vercel + Resend está funcionando perfectamente.</p><p style="color:#9b9b98;font-size:12px;font-family:monospace;margin:0">Enviado desde MailBot EOS Community</p></div></div>`;
+  try{
+    const res=await fetch(`${conf.serverUrl.replace(/\/$/,'')}/api/send`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to_email:testEmail,to_name:'Prueba',subject:'✓ MailBot EOS — Prueba de email',html:testHtml})
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error||res.statusText);
+    r.textContent='Enviado a '+testEmail;r.style.color='var(--green)';
+  }catch(e){r.textContent='Error: '+e.message;r.style.color='var(--red)';}
+}
+
+// ── NAV ──
+function go(tab,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(a=>a.classList.remove('on'));
+  document.getElementById('tab-'+tab).classList.add('on');
+  if(el)el.classList.add('on');
+  const titles={dashboard:'Dashboard',contactos:'Contactos',inactivos:'Inactivos',campana:'Campaña',historial:'Historial',config:'Configuración',ayuda:'Ayuda'};
+  document.getElementById('pg-title').textContent=titles[tab]||tab;
+  if(tab==='campana'){updPrevSel();updSendN();updTgtNums();}
+  if(tab==='dashboard')renderDash();
+  if(tab==='contactos'){updPais();renderC();}
+  if(tab==='inactivos'){updPais();renderI();}
+  if(tab==='historial')renderHist();
+}
+
+// ── HELPERS ──
+function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+function toast(msg,type='s'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=type;t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);
+}
+</script>
+</body>
+</html>
